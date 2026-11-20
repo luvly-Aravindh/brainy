@@ -62,6 +62,7 @@
 
     img {
       max-width: 100%;
+      height: auto;
       display: block
     }
 
@@ -2041,7 +2042,7 @@ not claim a new content review or fact check.
             aspect="0.5625"></wistia-player></div>
         <div class="cap">Brainy’s franchise overview, linked from its official opportunity page.</div>
       </div>
-      <h2>The Tri-Core Franchise At a Glance</h2>
+      <h2 id="franchise-at-a-glance">The Tri-Core Franchise At a Glance</h2>
       <p>Key requirements to evaluate before discussing an available territory.</p>
       <div class="product">
         <div class="ribbon">Franchise Opportunity  ·  Gujarat</div>
@@ -2431,6 +2432,15 @@ not claim a new content review or fact check.
       videoDialog.addEventListener('close', updateScrollCta);
       updateScrollCta();
 
+      function goToFranchiseGlance() {
+        previousFocus = null; // don't bounce focus (and scroll) back to the opener CTA
+        enquiryDialog.close();
+        const target = document.getElementById('franchise-at-a-glance');
+        if (!target) return;
+        const jump = () => target.scrollIntoView({ block: 'start' });
+        requestAnimationFrame(jump);
+        setTimeout(jump, 300); // re-correct for any late font/image layout shift
+      }
       document.querySelectorAll('[data-qualify]').forEach(button => button.addEventListener('click', () => {
         if (button.dataset.qualify === 'yes') {
           investmentQualified = true;
@@ -2438,9 +2448,17 @@ not claim a new content review or fact check.
           document.getElementById('fullName').focus();
         } else {
           investmentQualified = false;
-          showStep('planning-step');
+          goToFranchiseGlance();
         }
       }));
+      // "Below ₹18 lakh" capacity: send them to the franchise overview section.
+      const investmentSelect = document.getElementById('investmentCapacity');
+      if (investmentSelect) investmentSelect.addEventListener('change', () => {
+        if (investmentSelect.value === 'Below ₹18 lakh') {
+          investmentQualified = false;
+          goToFranchiseGlance();
+        }
+      });
       enquiryDialog.querySelector('[data-reconsider]').addEventListener('click', () => {
         investmentQualified = false;
         showStep('qualify-step');
@@ -2507,7 +2525,7 @@ not claim a new content review or fact check.
           const res = await fetch(DESK_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + DESK_API_KEY },
-            body: JSON.stringify({ form: 'contact', honeypot: fields.honeypot, ...fields }),
+            body: JSON.stringify({ form: 'contact', honeypot: fields.honeypot, ...fields, subject: 'New Lead Brainy Submission' }),
             keepalive: true
           });
           let data = {};
